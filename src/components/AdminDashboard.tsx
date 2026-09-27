@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FoodItem, UserProfile, FoodCategory, MeatType } from '../types/food';
-import { Shield, ShieldAlert, Plus, Edit2, Trash2, Search, Sliders, Users, Utensils, Flame, RotateCcw, Check, Sparkles } from 'lucide-react';
+import { Shield, ShieldAlert, Plus, Edit2, Trash2, Search, Sliders, Users, Utensils, Flame, RotateCcw, Check, Sparkles, KeyRound, Copy, UserCheck, UserX, ShieldCheck } from 'lucide-react';
 import { sounds } from '../utils/audio';
 
 interface AdminDashboardProps {
@@ -13,6 +13,8 @@ interface AdminDashboardProps {
   onResetFoods: () => void;
   onSwitchToAdmin: () => void;
   onDeleteUser: (id: string) => void;
+  onToggleUserRole?: (id: string) => void;
+  onToggleUserStatus?: (id: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -25,10 +27,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onResetFoods,
   onSwitchToAdmin,
   onDeleteUser,
+  onToggleUserRole,
+  onToggleUserStatus,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'foods' | 'members' | 'settings'>('overview');
   const [searchFoodQuery, setSearchFoodQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<'ทั้งหมด' | FoodCategory>('ทั้งหมด');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Food Edit/Add Modal State
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
@@ -52,6 +57,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const snackCount = foods.filter((f) => f.category === 'ของกินเล่น').length;
   const totalSpins = users.reduce((acc, u) => acc + u.spinCount, 0);
 
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    sounds.playPop();
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   // Access check
   if (!currentUser || currentUser.role !== 'admin') {
     return (
@@ -60,17 +72,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <ShieldAlert className="w-8 h-8" />
         </div>
         <h2 className="text-xl font-bold text-stone-900 mb-2">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</h2>
-        <p className="text-sm text-stone-500 mb-6">
-          หน้านี้สงวนไว้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น สมาชิกทั่วไปไม่สามารถเข้าถึงได้
+        <p className="text-sm text-stone-500 mb-4">
+          หน้านี้สงวนไว้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น บัญชีของคุณขณะนี้เป็นสถานะ Member
         </p>
+
+        {/* Credentials reminder for the user */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left text-xs text-stone-700 mb-6 space-y-1">
+          <p className="font-bold text-amber-900 flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5 text-orange-600" />
+            <span>รหัสผ่านสำหรับเข้าใช้งานระบบ Admin:</span>
+          </p>
+          <p className="font-mono text-stone-800">อีเมล: <strong>admin@firstautofood.th</strong></p>
+          <p className="font-mono text-amber-800">รหัสผ่าน: <strong>admin888food</strong></p>
+        </div>
+
         <button
           onClick={() => {
             sounds.playPop();
             onSwitchToAdmin();
           }}
-          className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+          className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
         >
-          สลับเป็นบัญชีผู้ดูแลระบบ (Admin Chef)
+          <ShieldCheck className="w-4 h-4" />
+          <span>สลับเป็นบัญชีผู้ดูแลระบบทันที</span>
         </button>
       </div>
     );
@@ -179,23 +203,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-stone-900 to-stone-800 rounded-3xl p-6 sm:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+      <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-800 rounded-3xl p-6 sm:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
         <div className="space-y-1 text-center sm:text-left">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold mb-1">
             <Shield className="w-3.5 h-3.5" />
-            <span>Admin Control Center</span>
+            <span>Admin Control Center (ระบบจัดการหลังบ้าน)</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">ระบบจัดการหลังบ้าน</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">ระบบแอดมิน First Auto Food</h1>
           <p className="text-xs sm:text-sm text-stone-300 max-w-xl">
-            จัดการรายการอาหารทั้งหมด {foods.length} เมนู ตรวจสอบสถิติ และบริหารจัดการผู้ใช้งาน
+            จัดการรายการอาหารทั้งหมด {foods.length} เมนู ตรวจสอบสถิติ จัดการสมาชิก และตั้งค่าระบบ
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-stone-800/80 p-1 rounded-2xl border border-stone-700">
+        <div className="flex bg-stone-800/80 p-1 rounded-2xl border border-stone-700 overflow-x-auto max-w-full">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all ${
+            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'overview' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-300 hover:text-white'
             }`}
           >
@@ -203,7 +227,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('foods')}
-            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all ${
+            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'foods' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-300 hover:text-white'
             }`}
           >
@@ -211,7 +235,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('members')}
-            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all ${
+            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'members' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-300 hover:text-white'
             }`}
           >
@@ -219,11 +243,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all ${
+            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'settings' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-300 hover:text-white'
             }`}
           >
-            ตั้งค่าระบบ
+            รหัสผ่านและตั้งค่า
           </button>
         </div>
       </div>
@@ -455,18 +479,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Tab 3: Members Management */}
       {activeTab === 'members' && (
         <div className="bg-white rounded-3xl p-6 border border-amber-100 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-stone-900">รายชื่อสมาชิกทั้งหมด ({users.length} คน)</h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-stone-900">รายชื่อสมาชิกทั้งหมด ({users.length} คน)</h3>
+              <p className="text-xs text-stone-500">สามารถปรับเปลี่ยนสิทธิ์ Member / Admin หรือระงับสถานะสมาชิกได้</p>
+            </div>
+          </div>
+
           <div className="overflow-x-auto border border-stone-100 rounded-2xl">
             <table className="w-full text-left text-xs text-stone-700">
               <thead className="bg-stone-50 border-b border-stone-100 font-bold text-stone-600 uppercase text-[10px]">
                 <tr>
                   <th className="p-3">สมาชิก</th>
                   <th className="p-3">อีเมล</th>
+                  <th className="p-3">รหัสผ่าน</th>
                   <th className="p-3">ระดับสิทธิ์</th>
                   <th className="p-3">จำนวนสุ่ม</th>
                   <th className="p-3">เมนูโปรด</th>
-                  <th className="p-3">วันที่เข้าร่วม</th>
-                  <th className="p-3 text-right">การจัดการ</th>
+                  <th className="p-3">สถานะ</th>
+                  <th className="p-3 text-right">การจัดการสิทธิ์</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -476,20 +507,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <img src={u.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
                       <span>{u.name}</span>
                     </td>
-                    <td className="p-3 text-stone-500">{u.email}</td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          u.role === 'admin' ? 'bg-amber-500 text-white' : 'bg-orange-100 text-orange-700'
-                        }`}
-                      >
-                        {u.role}
+                    <td className="p-3 text-stone-500 font-mono">{u.email}</td>
+                    <td className="p-3 font-mono text-stone-700">
+                      <span className="bg-stone-100 px-2 py-0.5 rounded text-[11px]">
+                        {u.password || 'password123'}
                       </span>
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => onToggleUserRole && onToggleUserRole(u.id)}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                          u.role === 'admin'
+                            ? 'bg-amber-500 text-white hover:bg-amber-600'
+                            : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                        }`}
+                        title="คลิกเพื่อสลับสิทธิ์ Member / Admin"
+                      >
+                        {u.role === 'admin' ? '🛡️ Admin' : '👤 Member'}
+                      </button>
                     </td>
                     <td className="p-3 font-mono">{u.spinCount} ครั้ง</td>
                     <td className="p-3 font-mono">{u.favorites.length} รายการ</td>
-                    <td className="p-3 text-stone-400">{u.joinedDate}</td>
-                    <td className="p-3 text-right">
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        u.status === 'suspended' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {u.status === 'suspended' ? 'ถูกระงับ' : 'ปกติ'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right space-x-1 whitespace-nowrap">
+                      {onToggleUserStatus && u.id !== currentUser.id && (
+                        <button
+                          onClick={() => onToggleUserStatus(u.id)}
+                          className="px-2 py-1 rounded-lg text-stone-500 hover:bg-stone-100 text-[11px]"
+                          title={u.status === 'suspended' ? 'ปลดบล็อก' : 'ระงับบัญชี'}
+                        >
+                          {u.status === 'suspended' ? 'ปลดระงับ' : 'ระงับ'}
+                        </button>
+                      )}
                       {u.role !== 'admin' && (
                         <button
                           onClick={() => {
@@ -513,28 +568,90 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* Tab 4: System Settings */}
+      {/* Tab 4: System Settings & Credentials */}
       {activeTab === 'settings' && (
-        <div className="bg-white rounded-3xl p-6 border border-amber-100 shadow-xs max-w-xl space-y-5">
-          <h3 className="text-base font-bold text-stone-900">การตั้งค่าระบบ</h3>
-
-          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200">
-            <h4 className="text-xs font-bold text-amber-900 mb-1">คืนค่าเริ่มต้นอาหาร (Reset to 75 Foods)</h4>
-            <p className="text-xs text-amber-700 mb-3 leading-relaxed">
-              รีเซ็ตรายการอาหารกลับสู่ค่ามาตรฐาน 75 เมนู (ของคาว 25, ของหวาน 25, ของกินเล่น 25)
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Credentials Reference Card */}
+          <div className="bg-white rounded-3xl p-6 border border-amber-100 shadow-xs space-y-4">
+            <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-amber-500" />
+              <span>ข้อมูลบัญชีและรหัสผ่านระบบ (Default Accounts)</span>
+            </h3>
+            <p className="text-xs text-stone-500">
+              รายละเอียดบัญชีเริ่มต้นสำหรับคุณครู ผู้ตรวจ และนักเรียนในการทดสอบระบบ
             </p>
-            <button
-              onClick={() => {
-                if (window.confirm('คุณต้องการรีเซ็ตรายการอาหารกลับสู่ 75 เมนูตั้งต้นใช่หรือไม่?')) {
-                  sounds.playPop();
-                  onResetFoods();
-                  alert('รีเซ็ตรายการอาหาร 75 เมนูเรียบร้อยแล้ว!');
-                }
-              }}
-              className="py-2 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs shadow-sm transition-all"
-            >
-              คืนค่า 75 เมนูอาหารมาตรฐาน
-            </button>
+
+            <div className="space-y-3">
+              {/* Member credentials box */}
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-stone-800">
+                    <span>👤 บัญชี Member (สมาชิกทั่วไป)</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy('first.student@foodapp.th / password123', 's-mem')}
+                    className="text-[11px] text-stone-600 hover:text-orange-600 flex items-center gap-1 font-semibold"
+                  >
+                    {copiedId === 's-mem' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedId === 's-mem' ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
+                  </button>
+                </div>
+                <div className="text-xs font-mono bg-white p-2.5 rounded-xl border border-stone-200 text-stone-700 space-y-1">
+                  <div>อีเมล: <strong>first.student@foodapp.th</strong></div>
+                  <div>รหัสผ่าน: <strong className="text-orange-600">password123</strong></div>
+                  <div className="text-[11px] text-stone-400 pt-1 border-t border-stone-100">
+                    สิทธิ์: สุ่มอาหาร, ดูเมนู, บันทึกเมนูโปรด, บันทึกประวัติ
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin credentials box */}
+              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                    <span>🛡️ บัญชี Admin (ผู้ดูแลระบบหลังบ้าน)</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy('admin@firstautofood.th / admin888food', 's-adm')}
+                    className="text-[11px] text-amber-800 hover:text-orange-600 flex items-center gap-1 font-semibold"
+                  >
+                    {copiedId === 's-adm' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedId === 's-adm' ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
+                  </button>
+                </div>
+                <div className="text-xs font-mono bg-white p-2.5 rounded-xl border border-amber-200 text-stone-700 space-y-1">
+                  <div>อีเมล: <strong>admin@firstautofood.th</strong></div>
+                  <div>รหัสผ่าน: <strong className="text-amber-700">admin888food</strong></div>
+                  <div className="text-[11px] text-stone-400 pt-1 border-t border-stone-100">
+                    สิทธิ์: เข้าถึง Dashboard, จัดการ/เพิ่ม/ลบอาหาร, จัดการสมาชิก, ตั้งค่าระบบ
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Database Reset & Options */}
+          <div className="bg-white rounded-3xl p-6 border border-amber-100 shadow-xs space-y-5">
+            <h3 className="text-base font-bold text-stone-900">การจัดการฐานข้อมูลและระบบ</h3>
+
+            <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200">
+              <h4 className="text-xs font-bold text-amber-900 mb-1">คืนค่าเริ่มต้นอาหาร (Reset to 75 Foods)</h4>
+              <p className="text-xs text-amber-700 mb-3 leading-relaxed">
+                รีเซ็ตรายการอาหารกลับสู่ค่ามาตรฐาน 75 เมนู (ของคาว 25, ของหวาน 25, ของกินเล่น 25) กรณีที่มีการทดสอบลบหรือแก้ไข
+              </p>
+              <button
+                onClick={() => {
+                  if (window.confirm('คุณต้องการรีเซ็ตรายการอาหารกลับสู่ 75 เมนูตั้งต้นใช่หรือไม่?')) {
+                    sounds.playPop();
+                    onResetFoods();
+                    alert('รีเซ็ตรายการอาหาร 75 เมนูเรียบร้อยแล้ว!');
+                  }
+                }}
+                className="py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs shadow-sm transition-all"
+              >
+                คืนค่า 75 เมนูอาหารมาตรฐาน
+              </button>
+            </div>
           </div>
         </div>
       )}

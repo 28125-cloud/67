@@ -249,6 +249,38 @@ export default function App() {
     addToast('info', 'ลบสมาชิกออกจากระบบแล้ว');
   };
 
+  const handleToggleUserRole = (userId: string) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const newRole = u.role === 'admin' ? 'member' : 'admin';
+          return { ...u, role: newRole };
+        }
+        return u;
+      })
+    );
+    // If updating current user
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser((prev) =>
+        prev ? { ...prev, role: prev.role === 'admin' ? 'member' : 'admin' } : null
+      );
+    }
+    addToast('success', 'เปลี่ยนสิทธิ์การใช้งานของสมาชิกแล้ว');
+  };
+
+  const handleToggleUserStatus = (userId: string) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const newStatus = u.status === 'suspended' ? 'active' : 'suspended';
+          return { ...u, status: newStatus };
+        }
+        return u;
+      })
+    );
+    addToast('info', 'อัปเดตสถานะบัญชีสมาชิกแล้ว');
+  };
+
   const handleSwitchToAdmin = () => {
     const adminUser = users.find((u) => u.role === 'admin') || DEFAULT_USERS[1];
     setCurrentUser(adminUser);
@@ -641,6 +673,8 @@ export default function App() {
             onResetFoods={handleResetFoodsToDefault}
             onSwitchToAdmin={handleSwitchToAdmin}
             onDeleteUser={handleDeleteUser}
+            onToggleUserRole={handleToggleUserRole}
+            onToggleUserStatus={handleToggleUserStatus}
           />
         )}
       </main>

@@ -52,6 +52,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  password?: string;
   role: 'member' | 'admin';
   profileImage: string;
   favorites: string[]; // food IDs
