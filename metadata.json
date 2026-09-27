@@ -1,0 +1,6 @@
+{
+  "name": "First Auto Food",
+  "description": "เว็บไซต์สุ่มเมนูอาหารอัตโนมัติ ช่วยตัดสินใจเลือกมื้ออร่อยตามเงื่อนไข พร้อมวงล้อหมุนสุ่มและระบบหลังบ้าน",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
